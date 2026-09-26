@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="睡眠">
+<meta name="theme-color" content="#020b18">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>睡眠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --night: #020b18;
+    --panel: #0a1628;
+    --panel-2: #10203a;
+    --line: #1b2b46;
+    --ink: #e8ecf6;
+    --ink-2: #a4aec6;
+    --ink-3: #7a86a1;
+    --lav: #b8a6ff;
+    --lav-ink: #140c33;
+    --lav-soft: rgba(184, 166, 255, 0.12);
+    --lav-line: rgba(184, 166, 255, 0.4);
+    --no: #8b72f5;
+    --yes: #c9822a;
+    --warn: #fab219;
+    --r: 16px;
+    --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    --f-num: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Zen Kaku Gothic New", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--night);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+  button, textarea, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { opacity: 0.55; cursor: default; }
+  :focus-visible { outline: 2px solid var(--lav); outline-offset: 2px; }
+
+  .app { max-width: 520px; margin: 0 auto; padding-inline: 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); }
+  .screen { display: flex; flex-direction: column; gap: 14px; }
+
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(2, 11, 24, 0.94); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-block: 8px 6px; background: none; border: 0; color: var(--ink-3); font-size: 11px; }
+  .tab svg { width: 22px; height: 22px; }
+  .tab[aria-current="page"] { color: var(--lav); font-weight: 700; }
+  svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .status { margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .status.is-error { border-color: var(--warn); }
+  .status .btn { padding: 6px 12px; font-size: 13px; flex: none; }
+
+  .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+  .eyebrow { font-size: 12px; color: var(--ink-2); letter-spacing: 0.06em; margin: 0; }
+  .title { font-family: var(--f-num); font-size: 24px; font-weight: 700; margin: 0; line-height: 1.3; }
+  .sub { font-size: 13px; color: var(--ink-2); margin: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card-head h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-2); margin: 0; }
+  .meta { font-size: 12px; color: var(--ink-3); }
+  .empty { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 2px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); white-space: nowrap; }
+  .dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; flex: none; }
+  .dot.no { background: var(--no); }
+  .dot.yes { background: var(--yes); }
+  .pill-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--ink-2); }
+  .link-btn { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--lav); font-size: 14px; }
+  .btn { border-radius: 12px; padding: 12px 16px; font-weight: 700; border: 1px solid transparent; }
+  .btn-primary { background: var(--lav); color: var(--lav-ink); }
+  .btn-ghost { background: var(--lav-soft); color: var(--lav); border-color: var(--lav-line); }
+  .btn-block { width: 100%; }
+  .note { font-size: 12px; color: var(--ink-3); margin: 0; }
+  .flag { margin: 0; font-size: 13px; color: var(--warn); }
+
+  /* ホーム */
+  .focus-band { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--lav-soft); border: 1px solid var(--lav-line); border-radius: 12px; padding: 10px 14px; }
+  .focus-band span { display: flex; flex-direction: column; min-width: 0; }
+  .focus-band small { font-size: 12px; color: var(--ink-2); }
+  .focus-band strong { font-size: 17px; overflow-wrap: anywhere; }
+  .focus-band strong.muted { color: var(--ink-2); font-weight: 500; font-size: 15px; }
+  .focus-band em { font-style: normal; font-size: 12px; color: var(--lav); white-space: nowrap; }
+  .hero-num { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .big { font-family: var(--f-num); font-size: 44px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 0; }
+  .big small { font-size: 17px; font-weight: 500; color: var(--ink-2); margin-inline: 2px 6px; }
+  .eff { text-align: right; margin: 0; }
+  .eff b { display: block; font-family: var(--f-num); font-size: 24px; line-height: 1.2; }
+  .eff span { font-size: 12px; color: var(--ink-2); }
+  .night { position: relative; padding-block: 22px 18px; }
+  .night-track { position: relative; height: 12px; border-radius: 6px; background: var(--panel-2); }
+  .night-bar { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: var(--no); }
+  .night-end { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .night-end span { color: var(--ink-3); margin-right: 4px; }
+  .night-ticks { position: relative; height: 14px; margin-top: 6px; }
+  .night-ticks span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+  .night-ticks span:first-child { transform: none; }
+  .night-ticks span:last-child { transform: translateX(-100%); }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+  .facts div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .facts dt { font-size: 12px; color: var(--ink-2); }
+  .facts dd { margin: 0; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .todo { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; }
+  .todo span { display: flex; flex-direction: column; min-width: 0; }
+  .todo small { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .todo .done { color: var(--lav); font-weight: 700; }
+  .todo .btn { padding: 8px 14px; font-size: 14px; flex: none; }
+  .advice { margin: 0; font-size: 15px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* 入力 */
+  .field { display: flex; flex-direction: column; gap: 10px; }
+  .field-label { font-size: 14px; font-weight: 700; margin: 0; }
+  .stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .stepper button { width: 48px; height: 44px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); font-size: 22px; line-height: 1; }
+  .stepper output { font-family: var(--f-num); font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stepper output small { font-size: 15px; color: var(--ink-2); font-weight: 500; margin-left: 4px; }
+  .rating { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .rating button { height: 48px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); font-family: var(--f-num); font-size: 19px; font-weight: 700; }
+  .rating button[aria-pressed="true"] { background: var(--lav); color: var(--lav-ink); border-color: var(--lav); }
+  .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .check { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; }
+  .check svg { width: 18px; height: 18px; opacity: 0; flex: none; }
+  .check[aria-pressed="true"] { background: var(--lav-soft); border-color: var(--lav-line); color: var(--lav); font-weight: 700; }
+  .check[aria-pressed="true"] svg { opacity: 1; }
+  .check.add { justify-content: center; border-style: dashed; color: var(--ink-2); background: none; }
+  .add-row { display: flex; gap: 8px; }
+  input[type="text"], input[type="url"], textarea { width: 100%; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; line-height: 1.6; }
+  input::placeholder, textarea::placeholder { color: var(--ink-3); }
+  .add-row input { flex: 1; min-width: 0; }
+  .add-row .btn { padding: 8px 16px; font-size: 14px; flex: none; }
+
+  /* 週の記録 */
+  textarea { min-height: 76px; resize: vertical; }
+  .row-end { display: flex; justify-content: flex-end; }
+  .row-end .btn { padding: 8px 18px; font-size: 14px; }
+  .copy-steps { margin: 0; padding-left: 1.3em; font-size: 13px; color: var(--ink-2); display: grid; gap: 2px; }
+  .history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .history li { padding-block: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+  .history li:first-child { border-top: 0; padding-top: 0; }
+  .history p { margin: 0; font-size: 14px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; width: max-content; max-width: calc(100% - 32px); background: var(--ink); color: var(--night); font-size: 14px; font-weight: 500; padding: 10px 16px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+  @media (prefers-reduced-motion: no-preference) {
+    .toast { animation: rise 0.2s ease-out; }
+    @keyframes rise { from { opacity: 0; transform: translate(-50%, 6px); } }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="status" id="status" role="status" aria-live="polite" hidden><span id="status-text"></span><button type="button" class="btn btn-ghost" id="retry" hidden>もう一度</button></div>
+
+  <!-- ホーム -->
+  <section class="screen" id="home" aria-label="ホーム">
+    <div class="top">
+      <div>
+        <p class="eyebrow" id="home-week">&nbsp;</p>
+        <h1 class="title" id="home-date">睡眠</h1>
+      </div>
+      <button type="button" class="pill-btn" data-go="settings">設定</button>
+    </div>
+    <button type="button" class="focus-band" id="focus-band" data-go="week" hidden></button>
+    <article class="card" aria-label="昨夜の睡眠">
+      <div class="card-head"><h3>昨夜の睡眠</h3><span class="meta" id="night-meta"></span></div>
+      <div id="night-body"><p class="empty">読み込み中…</p></div>
+      <div class="todo" id="todo" hidden></div>
+    </article>
+    <article class="card" aria-label="AI の助言">
+      <div class="card-head"><h3>AI の助言</h3><span class="meta" id="advice-meta"></span></div>
+      <p class="advice" id="advice-text"></p>
+      <button type="button" class="link-btn" data-go="week">これまでの助言を見る</button>
+    </article>
+  </section>
+
+  <!-- 入力 -->
+  <section class="screen" id="input" aria-label="入力" hidden>
+    <div>
+      <p class="eyebrow" id="input-eyebrow"></p>
+      <h2 class="title">今朝の入力</h2>
+      <p class="sub" id="input-sub"></p>
+    </div>
+    <div class="card field">
+      <p class="field-label" id="wake-label">夜中に目が覚めた回数</p>
+      <div class="stepper" role="group" aria-labelledby="wake-label">
+        <button type="button" id="wake-minus" aria-label="1 回減らす">−</button>
+        <output id="wake-count" aria-live="polite">0<small>回</small></output>
+        <button type="button" id="wake-plus" aria-label="1 回増やす">＋</button>
+      </div>
+    </div>
+    <div class="card field">
+      <p class="field-label" id="rate-label">寝起きの気分（自己評価）</p>
+      <div class="rating" role="group" aria-labelledby="rate-label" id="rating">
+        <button type="button" aria-pressed="false">1</button>
+        <button type="button" aria-pressed="false">2</button>
+        <button type="button" aria-pressed="false">3</button>
+        <button type="button" aria-pressed="false">4</button>
+        <button type="button" aria-pressed="false">5</button>
+      </div>
+      <div class="scale"><span>1＝最悪</span><span>5＝最高</span></div>
+    </div>
+    <div class="card field">
+      <p class="field-label" id="check-label">昨夜使ったもの</p>
+      <div class="checks" id="checks" role="group" aria-labelledby="check-label"></div>
+      <div class="add-row" id="add-row" hidden>
+        <input id="new-item" type="text" maxlength="10" placeholder="例：カフェイン" aria-label="追加する項目の名前" autocomplete="off">
+        <button type="button" class="btn btn-ghost" id="add-item">追加</button>
+      </div>
+      <p class="note">追加した項目は、保存すると次の日からも表示されます。</p>
+    </div>
+    <button type="button" class="btn btn-primary btn-block" id="save-input">保存する</button>
+    <p class="note">保存すると、統合シートがすぐに作り直されてホームに反映されます。</p>
+  </section>
+
+  <!-- 傾向（②で作る） -->
+  <section class="screen" id="trend" aria-label="傾向" hidden>
+    <div>
+      <p class="eyebrow">②の段階で作ります</p>
+      <h2 class="title">傾向</h2>
+    </div>
+    <div class="card">
+      <p class="empty">グラフは、毎日の入力を 2 週間ほどためてから作ります。デザインは「棒グラフ＋使ったものの点」（案A）に決まっています。</p>
+    </div>
+  </section>
+
+  <!-- 週の記録 -->
+  <section class="screen" id="week" aria-label="週の記録" hidden>
+    <div>
+      <p class="eyebrow" id="week-eyebrow"></p>
+      <h2 class="title">週の記録</h2>
+    </div>
+    <div class="card field">
+      <label class="field-label" for="focus-text">今週の取り組み</label>
+      <textarea id="focus-text" rows="2" maxlength="500" placeholder="例：耳栓を導入"></textarea>
+      <div class="row-end"><button type="button" class="btn btn-ghost" id="save-week">保存</button></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>AI に相談する</h3><span class="meta">週 1 回</span></div>
+      <ol class="copy-steps">
+        <li>下のボタンで、直近 28 日の記録と質問文をまとめてコピー</li>
+        <li>ChatGPT か Claude に貼り付けて送る</li>
+        <li>返ってきた【アプリ用】の部分を、下の欄に貼り付ける</li>
+      </ol>
+      <button type="button" class="btn btn-primary btn-block" id="copy-ai">AI用にコピー</button>
+      <div class="field" id="copy-fallback" hidden>
+        <p class="note">自動でコピーできませんでした。下の文を長押しして全部選び、コピーしてください。</p>
+        <textarea id="copy-text" rows="6" readonly aria-label="AI に渡す文"></textarea>
+      </div>
+    </div>
+    <div class="card field">
+      <label class="field-label" for="advice-input">AI の助言を貼り付け</label>
+      <textarea id="advice-input" rows="3" maxlength="3000" placeholder="AI の回答の【アプリ用】の部分を貼り付け"></textarea>
+      <div class="row-end"><button type="button" class="btn btn-ghost" id="save-advice">保存</button></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>これまでの助言</h3></div>
+      <ul class="history" id="history"></ul>
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section class="screen" id="settings" aria-label="設定" hidden>
+    <button type="button" class="link-btn" data-go="home">← ホームに戻る</button>
+    <h2 class="title">設定</h2>
+    <div class="card field">
+      <label class="field-label" for="gas-url">GAS のウェブアプリ URL</label>
+      <input id="gas-url" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+      <p class="note">iPhone のショートカット「睡眠送る」に入っている URL と同じものです。この端末の中にだけ保存されます。人に見せないでください。</p>
+      <button type="button" class="btn btn-primary btn-block" id="save-url">保存して読み込む</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" id="tabs" aria-label="画面の切り替え"></nav>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+  // ---- 設定（GAS の URL はこの端末の localStorage にだけ保存。コードには書かない） ----
+  const LS_URL = "sleep_gas_url";
+  const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+  const $ = id => document.getElementById(id);
+
+  // AI に渡す質問文（handoff.md 付録 C）
+  const PROMPT = [
+    "あなたは睡眠改善のアドバイザーです。以下は私の睡眠の記録です。",
+    "データから言えることだけを答え、言えないことは「データ不足」と書いてください。",
+    "",
+    "お願いしたいこと：",
+    "1. 睡眠が良かった日と悪かった日の共通点",
+    "2. 飲酒・室温・瞑想・耳栓などの要因が睡眠に与えている影響",
+    "3. 今週の取り組みに効果があったかの評価",
+    "4. 来週試すことを 1 つだけ",
+    "5. アプリに表示する短い助言（3 行以内。最後に「【アプリ用】」という見出しを付けて書く）"
+  ].join("\n");
+
+  let data = null;   // GAS から届いた中身（payload）
+  const form = { wakeups: 0, rating: null, pressed: new Set(), extra: [] };
+
+  // ---- GAS との通信 ----
+  async function api(action, extra) {
+    const url = lsGet(LS_URL);
+    if (!url) throw new Error("設定で GAS の URL を入れてください");
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(Object.assign({ action }, extra || {})),
+        redirect: "follow"
+      });
+    } catch (e) {
+      throw new Error("通信できませんでした。電波か、設定の URL を確認してください");
+    }
+    if (!res.ok) throw new Error(`通信エラーです（${res.status}）`);
+    let json;
+    try { json = await res.json(); } catch (e) { throw new Error("返事を読めませんでした。設定の URL が正しいか確認してください"); }
+    if (!json.ok) throw new Error(json.error || "エラーが起きました");
+    return json;
+  }
+
+  // ボタンを押している間は二重に押せないようにする
+  async function run(btn, label, fn) {
+    const text = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label;
+    try { await fn(); } catch (e) { toast(e.message, 4000); } finally { btn.disabled = false; btn.textContent = text; }
+  }
+
+  // ---- 表示の道具 ----
+  const WD = "日月火水木金土";
+  const nums = k => k.split("-").map(Number);
+  const wd = k => { const [y, m, d] = nums(k); return WD[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; };
+  const md = k => { const [, m, d] = nums(k); return `${m}/${d}（${wd(k)}）`; };
+  const mdShort = k => { const [, m, d] = nums(k); return `${m}/${d}`; };
+  const longDate = k => { const [, m, d] = nums(k); return `${m}月${d}日（${wd(k)}）`; };
+  const addDays = (k, n) => { const [y, m, d] = nums(k); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
+  const daysBetween = (a, b) => { const [y1, m1, d1] = nums(a), [y2, m2, d2] = nums(b); return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000); };
+  const hm = min => { const t = Math.round(min); return `${Math.floor(t / 60)}時間${String(t % 60).padStart(2, "0")}分`; };
+  const isBlank = v => v === "" || v === null || v === undefined;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function rowOf(key) {
+    const r = data && data.rows.find(x => x[0] === key);
+    if (!r) return null;
+    const o = {};
+    data.header.forEach((h, i) => { o[h] = r[i]; });
+    return o;
+  }
+
+  let toastTimer;
+  function toast(msg, ms) {
+    const el = $("toast");
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, ms || 2600);
+  }
+  function setStatus(msg, isError) {
+    $("status").hidden = !msg;
+    $("status").classList.toggle("is-error", !!isError);
+    $("status-text").textContent = msg || "";
+    $("retry").hidden = !isError;
+  }
+
+  // ---- 画面の切り替え ----
+  const ICONS = {
+    home: '<path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/>',
+    input: '<path d="M5 19h4L19 9l-4-4L5 15zM13.5 6.5l4 4"/>',
+    trend: '<path d="M5 19v-7M10 19V6M15 19v-9M20 19v-4"/>',
+    week: '<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>'
+  };
+  const TABS = [["home", "ホーム"], ["input", "入力"], ["trend", "傾向"], ["week", "週の記録"]];
+  $("tabs").innerHTML = TABS.map(([id, label]) =>
+    `<button type="button" class="tab" data-go="${id}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[id]}</svg><span>${label}</span></button>`).join("");
+
+  function show(id) {
+    if ((id === "input" || id === "week") && !data) { toast("まだ読み込めていません"); return; }
+    document.querySelectorAll(".screen").forEach(s => { s.hidden = s.id !== id; });
+    document.querySelectorAll(".tab").forEach(t => {
+      if (t.dataset.go === id) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
+    });
+    if (id === "input") openInput();
+    if (id === "settings") $("gas-url").value = lsGet(LS_URL);
+    window.scrollTo(0, 0);
+  }
+  document.addEventListener("click", e => {
+    const go = e.target.closest("[data-go]");
+    if (go) show(go.dataset.go);
+  });
+
+  // ---- ホーム ----
+  function renderHome() {
+    const t = data.today;
+    $("home-week").textContent = data.thisWeek;
+    $("home-date").textContent = longDate(t);
+
+    const w = data.weeks.find(x => x.week === data.thisWeek);
+    const nth = daysBetween(data.thisWeekStart, t) + 1;
+    $("focus-band").hidden = false;
+    $("focus-band").innerHTML = w && w.text
+      ? `<span><small>今週の取り組み</small><strong>${esc(w.text)}</strong></span><em>${mdShort(data.thisWeekStart)} から ${nth} 日目</em>`
+      : `<span><small>今週の取り組み</small><strong class="muted">まだ決めていません</strong></span><em>決める</em>`;
+
+    $("night-meta").textContent = `${mdShort(addDays(t, -1))} → ${mdShort(t)}`;
+    const r = rowOf(t);
+    if (!r || isBlank(r["睡眠時間_分"])) {
+      $("night-body").innerHTML = '<p class="empty">昨夜の睡眠データはまだ届いていません。<br>Sleep Meister を閉じると届きます。</p>';
+    } else {
+      const pos = hhmm => {
+        const [h, m] = hhmm.split(":").map(Number);
+        let x = (h * 60 + m - 1260 + 1440) % 1440;
+        if (x > 720) x = x > 1080 ? 0 : 720;
+        return (x / 720) * 100;
+      };
+      const bed = r["就床時刻"], wake = r["起床時刻"];
+      const hasTimes = !isBlank(bed) && !isBlank(wake);
+      const a = hasTimes ? pos(bed) : 0, b = hasTimes ? pos(wake) : 0;
+      const label = x => Math.min(88, Math.max(12, x));
+      const sleepMin = Math.round(r["睡眠時間_分"]);
+      const drink = r["前夜の飲酒_1or0"];
+      const room = isBlank(r["寝室平均温度_℃"]) ? "—" : `${r["寝室平均温度_℃"]}℃${isBlank(r["寝室平均湿度_%"]) ? "" : "・" + r["寝室平均湿度_%"] + "%"}`;
+      $("night-body").innerHTML = `
+        <div class="hero-num">
+          <p class="big">${Math.floor(sleepMin / 60)}<small>時間</small>${String(sleepMin % 60).padStart(2, "0")}<small>分</small></p>
+          <p class="eff"><b>${isBlank(r["睡眠効率_%"]) ? "—" : r["睡眠効率_%"] + "%"}</b><span>睡眠効率</span></p>
+        </div>
+        ${hasTimes && b > a ? `
+        <div class="night" role="img" aria-label="就床 ${bed}、起床 ${wake}">
+          <span class="night-end" style="left:${label(a)}%"><span>就床</span>${bed}</span>
+          <span class="night-end" style="left:${label(b)}%"><span>起床</span>${wake}</span>
+          <div class="night-track"><div class="night-bar" style="left:${a}%;width:${b - a}%"></div></div>
+          <div class="night-ticks"><span style="left:0">21時</span><span style="left:25%">0時</span><span style="left:50%">3時</span><span style="left:75%">6時</span><span style="left:100%">9時</span></div>
+        </div>` : `<p class="sub">就床 ${esc(bed || "—")} → 起床 ${esc(wake || "—")}</p>`}
+        <dl class="facts">
+          <div><dt>在床</dt><dd>${isBlank(r["在床時間_分"]) ? "—" : hm(r["在床時間_分"])}</dd></div>
+          <div><dt>寝室</dt><dd>${room}</dd></div>
+          <div><dt>前夜</dt><dd>${drink === 1 ? '<span class="chip"><i class="dot yes"></i>飲酒</span>' : drink === 0 ? '<span class="chip"><i class="dot no"></i>休肝日</span>' : "記録なし"}</dd></div>
+        </dl>
+        ${r["要確認"] ? `<p class="flag">⚠️ 要確認：${esc(r["要確認"])}（記録ミスの可能性）</p>` : ""}`;
+    }
+
+    const inp = data.input;
+    $("todo").hidden = false;
+    if (!inp) {
+      $("todo").innerHTML = '<span>今朝の入力がまだです<small>目覚めた回数・寝起きの気分・使ったもの</small></span><button type="button" class="btn btn-primary" data-go="input">入力する</button>';
+    } else {
+      const used = data.items.filter(k => inp.checks[k] === 1);
+      $("todo").innerHTML = `<span><span class="done">✓ 今朝の入力ずみ</span><small>目覚め ${isBlank(inp.wakeups) ? "—" : inp.wakeups} 回 ・ 気分 ${isBlank(inp.rating) ? "—" : inp.rating} ・ ${esc(used.join("、") || "使ったものなし")}</small></span><button type="button" class="btn btn-ghost" data-go="input">直す</button>`;
+    }
+
+    const adv = data.advices[0];
+    $("advice-meta").textContent = adv ? `${adv.week} ・ ${mdShort(adv.at.slice(0, 10))} に貼り付け` : "";
+    $("advice-text").textContent = adv ? adv.text : "まだありません。「週の記録」で AI に相談して、返ってきた助言を貼り付けます。";
+  }
+
+  // ---- 入力 ----
+  const CHECK_SVG = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function openInput() {
+    const inp = data.input;
+    form.wakeups = inp && !isBlank(inp.wakeups) ? inp.wakeups : 0;
+    form.rating = inp && !isBlank(inp.rating) ? inp.rating : null;
+    form.pressed = new Set(inp ? data.items.filter(k => inp.checks[k] === 1) : []);
+    form.extra = [];
+    $("add-row").hidden = true;
+    $("input-eyebrow").textContent = `${md(data.today)}起床分`;
+    const r = rowOf(data.today);
+    $("input-sub").textContent = r && !isBlank(r["睡眠時間_分"])
+      ? `昨夜 ${r["就床時刻"] || "—"} → ${r["起床時刻"] || "—"} ・ 睡眠 ${hm(r["睡眠時間_分"])}（自動で記録済み）`
+      : "昨夜の睡眠データはまだ届いていません（入力は先にできます）";
+    renderForm();
+  }
+  function renderForm() {
+    $("wake-count").innerHTML = `${form.wakeups}<small>回</small>`;
+    document.querySelectorAll("#rating button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.textContent) === form.rating)));
+    const items = data.items.concat(form.extra);
+    $("checks").innerHTML = items.map(k =>
+      `<button type="button" class="check" data-item="${esc(k)}" aria-pressed="${form.pressed.has(k)}">${esc(k)}${CHECK_SVG}</button>`).join("") +
+      `<button type="button" class="check add" id="add-open" aria-expanded="${!$("add-row").hidden}">＋ 項目を追加</button>`;
+  }
+  $("wake-minus").addEventListener("click", () => { form.wakeups = Math.max(0, form.wakeups - 1); renderForm(); });
+  $("wake-plus").addEventListener("click", () => { form.wakeups = Math.min(50, form.wakeups + 1); renderForm(); });
+  $("rating").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const n = Number(b.textContent);
+    form.rating = form.rating === n ? null : n;   // もう一度押すと取り消し
+    renderForm();
+  });
+  $("checks").addEventListener("click", e => {
+    const item = e.target.closest("[data-item]");
+    if (item) {
+      const k = item.dataset.item;
+      if (form.pressed.has(k)) form.pressed.delete(k); else form.pressed.add(k);
+      item.setAttribute("aria-pressed", String(form.pressed.has(k)));
+      return;
+    }
+    if (e.target.closest("#add-open")) {
+      $("add-row").hidden = !$("add-row").hidden;
+      renderForm();
+      if (!$("add-row").hidden) $("new-item").focus();
+    }
+  });
+  function addItem() {
+    const name = $("new-item").value.trim();
+    if (!name) return toast("項目の名前を入れてください");
+    if (name.length > 10 || /[,"\r\n]/.test(name)) return toast("10 文字以内で、カンマは使わないでください");
+    if (data.items.concat(form.extra).includes(name)) return toast("同じ名前の項目がすでにあります");
+    form.extra.push(name);
+    form.pressed.add(name);
+    $("new-item").value = "";
+    $("add-row").hidden = true;
+    renderForm();
+    toast(`「${name}」を追加しました。保存すると次の日からも出ます`);
+  }
+  $("add-item").addEventListener("click", addItem);
+  $("new-item").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) addItem(); });
+  $("save-input").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
+    const checks = {};
+    data.items.concat(form.extra).forEach(k => { checks[k] = form.pressed.has(k) ? 1 : 0; });
+    data = await api("saveInput", { date: data.today, wakeups: form.wakeups, rating: form.rating, checks });
+    renderAll();
+    show("home");
+    toast("保存しました");
+  }));
+
+  // ---- 週の記録 ----
+  function renderWeek() {
+    $("week-eyebrow").textContent = `${data.thisWeek} ・ ${md(data.thisWeekStart)}〜${md(addDays(data.thisWeekStart, 6))}`;
+    const w = data.weeks.find(x => x.week === data.thisWeek);
+    $("focus-text").value = w ? w.text : "";
+    $("history").innerHTML = data.advices.length
+      ? data.advices.map(a => `<li><span class="meta">${esc(a.week)} ・ ${mdShort(a.at.slice(0, 10))} に貼り付け</span><p>${esc(a.text)}</p></li>`).join("")
+      : '<li><p class="empty">まだありません。</p></li>';
+  }
+  $("save-week").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
+    data = await api("saveWeek", { week: data.thisWeek, start: data.thisWeekStart, text: $("focus-text").value });
+    renderAll();
+    toast("今週の取り組みを保存しました");
+  }));
+  $("save-advice").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
+    const text = $("advice-input").value.trim();
+    if (!text) throw new Error("助言を貼り付けてください");
+    data = await api("saveAdvice", { week: data.thisWeek, text });
+    $("advice-input").value = "";
+    renderAll();
+    toast("助言を保存しました。ホームに表示されます");
+  }));
+
+  const csvCell = v => { const s = isBlank(v) ? "" : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  function buildAiText() {
+    const from = addDays(data.today, -27);
+    const rows = data.rows.filter(r => r[0] >= from);
+    const csv = [data.header].concat(rows).map(r => r.map(csvCell).join(",")).join("\n");
+    const dict = data.dict.map(([k, v]) => `- ${k}：${v}`).join("\n");
+    const weeks = data.weeks.filter(w => w.text).slice().reverse()
+      .map(w => `- ${w.week}（${w.start ? mdShort(w.start) + "〜" : ""}）：${w.text.replace(/\s*\n\s*/g, " ")}`).join("\n") || "（まだありません）";
+    const advices = data.advices.slice().reverse()
+      .map(a => `- ${a.week}（${mdShort(a.at.slice(0, 10))}）：${a.text.replace(/\s*\n\s*/g, " ")}`).join("\n") || "（まだありません）";
+    return [PROMPT, "", "【項目の説明】", dict, "", "【毎日の記録（直近28日）】", csv, "", "【週ごとの取り組み】", weeks, "", "【これまでの助言】", advices].join("\n");
+  }
+  $("copy-ai").addEventListener("click", () => {
+    const text = buildAiText();
+    const fallback = () => {
+      $("copy-fallback").hidden = false;
+      $("copy-text").value = text;
+      $("copy-text").focus();
+      $("copy-text").select();
+    };
+    if (!navigator.clipboard) return fallback();
+    navigator.clipboard.writeText(text)
+      .then(() => { $("copy-fallback").hidden = true; toast("コピーしました。ChatGPT か Claude に貼り付けてください"); })
+      .catch(fallback);
+  });
+
+  // ---- 設定 ----
+  $("save-url").addEventListener("click", e => {
+    const url = $("gas-url").value.trim();
+    if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)) return toast("「https://script.google.com/」で始まり「/exec」で終わる URL を入れてください", 4000);
+    if (!lsSet(LS_URL, url)) return toast("この端末に保存できませんでした（プライベートブラウズでは保存できません）", 4000);
+    run(e.currentTarget, "読み込み中…", async () => { await reload(); if (data) show("home"); });
+  });
+
+  // ---- 読み込み ----
+  function renderAll() {
+    renderHome();
+    renderWeek();
+    if (data.warnings && data.warnings.length) setStatus("⚠️ " + data.warnings.join(" ／ "));
+    else setStatus("");
+  }
+  async function reload() {
+    setStatus("読み込み中…");
+    try {
+      data = await api("load");
+      renderAll();
+    } catch (e) {
+      setStatus(e.message, true);
+    }
+  }
+  $("retry").addEventListener("click", reload);
+
+  show("home");
+  if (lsGet(LS_URL)) reload();
+  else { show("settings"); setStatus("最初に、GAS のウェブアプリ URL を設定してください"); }
+</script>
+</body>
+</html>
