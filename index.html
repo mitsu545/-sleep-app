@@ -141,6 +141,44 @@
   .add-row input { flex: 1; min-width: 0; }
   .add-row .btn { padding: 8px 16px; font-size: 14px; flex: none; }
 
+  /* 傾向 */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+  .seg button { border: 0; background: none; border-radius: 9px; padding: 7px 0; font-size: 14px; color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); font-weight: 700; box-shadow: 0 0 0 1px var(--line); }
+  .mchips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mchips button { border-radius: 999px; padding: 5px 12px; font-size: 13px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .mchips button[aria-pressed="true"] { background: var(--lav); border-color: var(--lav); color: var(--lav-ink); font-weight: 700; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot.na { border: 1px dashed var(--ink-3); }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: manipulation; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .base { stroke: var(--ink-3); stroke-width: 1; }
+  .chart .tick, .chart .xl { fill: var(--ink-3); font-size: 11px; font-family: var(--f-body); }
+  .chart .nil { fill: var(--ink-3); font-size: 12px; }
+  .chart .bar.no { fill: var(--no); }
+  .chart .bar.yes { fill: var(--yes); }
+  .chart .bar.na { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 2; }
+  .chart .bar.is-sel { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: none; }
+  .chart .colsel { fill: var(--lav-soft); }
+  .chart .rowbg { fill: var(--panel-2); stroke: var(--lav-line); stroke-width: 1; }
+  .chart .rowlabel { fill: var(--ink-2); font-size: 11px; font-family: var(--f-body); }
+  .chart .rowlabel.is-on { fill: var(--lav); font-weight: 700; }
+  .chart .dot-yes { fill: var(--ink-2); }
+  .chart .dot-yes.on { fill: var(--yes); stroke: var(--panel-2); stroke-width: 1.5; }
+  .chart .dot-no { fill: var(--ink-3); }
+  .chart .hit, .chart .rowhit { fill: transparent; cursor: pointer; }
+  .chart .rowhit:focus-visible { outline: none; stroke: var(--lav); stroke-width: 2; }
+  .readout { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; background: var(--panel-2); border-radius: 10px; padding: 8px 12px; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; }
+  .compare { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .compare th, .compare td { padding: 8px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  .compare th:first-child, .compare td:first-child { text-align: left; }
+  .compare thead th { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+  .compare tr:last-child td { border-bottom: 0; }
+  .compare .n { display: block; font-size: 11px; color: var(--ink-3); }
+  .diff { font-family: var(--f-num); font-weight: 700; }
+
   /* 週の記録 */
   textarea { min-height: 76px; resize: vertical; }
   .row-end { display: flex; justify-content: flex-end; }
@@ -223,14 +261,32 @@
     <p class="note">保存すると、統合シートがすぐに作り直されてホームに反映されます。</p>
   </section>
 
-  <!-- 傾向（②で作る） -->
+  <!-- 傾向（案A：棒グラフ＋その夜に使ったものの点） -->
   <section class="screen" id="trend" aria-label="傾向" hidden>
     <div>
-      <p class="eyebrow">②の段階で作ります</p>
+      <p class="eyebrow" id="trend-eyebrow">&nbsp;</p>
       <h2 class="title">傾向</h2>
     </div>
-    <div class="card">
-      <p class="empty">グラフは、毎日の入力を 2 週間ほどためてから作ります。デザインは「棒グラフ＋使ったものの点」（案A）に決まっています。</p>
+    <div class="seg" id="trend-sub" role="group" aria-label="表示の切り替え">
+      <button type="button" data-sub="trend" aria-pressed="true">推移</button>
+      <button type="button" data-sub="compare" aria-pressed="false">くらべる</button>
+    </div>
+    <div class="mchips" id="trend-metrics" role="group" aria-label="見る項目"></div>
+    <div class="card" id="trend-card">
+      <div class="legend" id="trend-legend"></div>
+      <div class="chart" id="trend-chart"><p class="empty">読み込み中…</p></div>
+      <p class="readout" id="trend-readout" aria-live="polite" hidden></p>
+      <p class="note" id="trend-note"></p>
+    </div>
+    <div class="card" id="compare-card" hidden>
+      <div class="card-head"><h3 id="compare-title"></h3><span class="meta">直近 28 日</span></div>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th scope="col">要因</th><th scope="col">あり</th><th scope="col">なし</th><th scope="col">差</th></tr></thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+      <p class="note">晩数が少ないうちは参考程度に見てください。瞑想は「前日にしたか」で分けています。記録のない夜は数えていません。</p>
     </div>
   </section>
 
@@ -288,6 +344,7 @@
 <script>
   // ---- 設定（GAS の URL はこの端末の localStorage にだけ保存。コードには書かない） ----
   const LS_URL = "sleep_gas_url";
+  const LS_CACHE = "sleep_cache_v1";   // 前回の結果（開いたらすぐ表示するため）
   const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
   const $ = id => document.getElementById(id);
@@ -306,6 +363,8 @@
   ].join("\n");
 
   let data = null;   // GAS から届いた中身（payload）
+  let fresh = false;       // 今回開いてから、最新を取得できたか
+  let cachedAt = null;     // 表示中の前回の結果を保存した時刻
   const form = { wakeups: 0, rating: null, pressed: new Set(), extra: [] };
 
   // ---- GAS との通信 ----
@@ -392,6 +451,7 @@
       if (t.dataset.go === id) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
     });
     if (id === "input") openInput();
+    if (id === "trend") renderTrend();
     if (id === "settings") $("gas-url").value = lsGet(LS_URL);
     window.scrollTo(0, 0);
   }
@@ -527,10 +587,10 @@
   $("add-item").addEventListener("click", addItem);
   $("new-item").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) addItem(); });
   $("save-input").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
+    needFresh();
     const checks = {};
     data.items.concat(form.extra).forEach(k => { checks[k] = form.pressed.has(k) ? 1 : 0; });
-    data = await api("saveInput", { date: data.today, wakeups: form.wakeups, rating: form.rating, checks });
-    renderAll();
+    setData(await api("saveInput", { date: data.today, wakeups: form.wakeups, rating: form.rating, checks }));
     show("home");
     toast("保存しました");
   }));
@@ -545,16 +605,17 @@
       : '<li><p class="empty">まだありません。</p></li>';
   }
   $("save-week").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
-    data = await api("saveWeek", { week: data.thisWeek, start: data.thisWeekStart, text: $("focus-text").value });
-    renderAll();
+    needFresh();
+    setData(await api("saveWeek", { week: data.thisWeek, start: data.thisWeekStart, text: $("focus-text").value }));
     toast("今週の取り組みを保存しました");
   }));
   $("save-advice").addEventListener("click", e => run(e.currentTarget, "保存中…", async () => {
     const text = $("advice-input").value.trim();
     if (!text) throw new Error("助言を貼り付けてください");
-    data = await api("saveAdvice", { week: data.thisWeek, text });
+    needFresh();
+    const next = await api("saveAdvice", { week: data.thisWeek, text });
     $("advice-input").value = "";
-    renderAll();
+    setData(next);
     toast("助言を保存しました。ホームに表示されます");
   }));
 
@@ -592,27 +653,194 @@
     run(e.currentTarget, "読み込み中…", async () => { await reload(); if (data) show("home"); });
   });
 
-  // ---- 読み込み ----
+  // ---- 傾向（案A：棒グラフ＋その夜に使ったものの点） ----
+  const tr = { sub: "trend", metric: "sleep", factor: "drink", sel: null };
+  const num = v => (isBlank(v) || isNaN(Number(v)) ? null : Number(v));
+  const sign = v => (v > 0 ? "+" : v < 0 ? "−" : "±");
+  const avg = a => a.reduce((t, x) => t + x, 0) / a.length;
+  const scale5 = () => ({ max: 5, ticks: [0, 1, 2, 3, 4, 5], tick: v => String(v) });
+  const METRICS = {
+    sleep: { label: "睡眠時間", col: "睡眠時間_分", fmt: v => hm(v), diff: v => `${sign(v)}${Math.abs(Math.round(v))}分`,
+      axis: vals => {
+        const max = Math.max(540, Math.ceil(Math.max(0, ...vals) / 180) * 180);
+        const ticks = [];
+        for (let t = 0; t <= max; t += 180) ticks.push(t);
+        return { max, ticks, tick: v => `${v / 60}時間` };
+      } },
+    eff: { label: "睡眠効率", col: "睡眠効率_%", fmt: v => `${v.toFixed(1)}%`, diff: v => `${sign(v)}${Math.abs(v).toFixed(1)}pt`,
+      axis: () => ({ max: 100, ticks: [0, 50, 100], tick: v => `${v}%` }) },
+    rt: { label: "寝起きの気分", col: "自己評価_1to5", fmt: v => v.toFixed(1), diff: v => `${sign(v)}${Math.abs(v).toFixed(1)}`, axis: scale5 },
+    wk: { label: "中途覚醒", col: "中途覚醒_回", fmt: v => `${v.toFixed(1)}回`, diff: v => `${sign(v)}${Math.abs(v).toFixed(1)}回`,
+      axis: vals => {
+        const top = Math.max(4, ...vals);
+        const step = top <= 5 ? 1 : Math.ceil(top / 4);
+        const ticks = [];
+        for (let t = 0; t < top + step; t += step) ticks.push(t);
+        return { max: ticks[ticks.length - 1], ticks, tick: v => `${v}回` };
+      } },
+    mood: { label: "日中の気分", col: "当日の気分_平均", fmt: v => v.toFixed(1), diff: v => `${sign(v)}${Math.abs(v).toFixed(1)}`, axis: scale5 }
+  };
+  const isItemCol = h => /_1or0$/.test(h) && h !== "前夜の飲酒_1or0";
+  // 色分け・点・くらべるの行（飲酒・瞑想は自動、残りは毎朝の入力）
+  function trendFactors() {
+    return [
+      { key: "drink", label: "飲酒", get: r => num(r["前夜の飲酒_1or0"]) },
+      { key: "medi", label: "瞑想", get: r => { const v = num(r["前日の瞑想_分"]); return v === null ? null : v > 0 ? 1 : 0; } }
+    ].concat(data.header.filter(isItemCol).map(h => ({ key: h, label: h.replace(/_1or0$/, ""), get: r => num(r[h]) })));
+  }
+  const fval = (f, r) => (r ? f.get(r) : null);
+  // 今日までの n 日（記録のない日は r が null）
+  function trendDays(n) {
+    const out = [];
+    for (let i = n - 1; i >= 0; i--) { const d = addDays(data.today, -i); out.push({ d, r: rowOf(d) }); }
+    return out;
+  }
+  function usedText(r) {
+    if (!r) return "記録なし";
+    const parts = [];
+    if (num(r["前夜の飲酒_1or0"]) === 1) parts.push("飲酒");
+    const medi = num(r["前日の瞑想_分"]);
+    if (medi > 0) parts.push(`瞑想${medi}分`);
+    const items = data.header.filter(isItemCol);
+    items.forEach(h => { if (num(r[h]) === 1) parts.push(h.replace(/_1or0$/, "")); });
+    if (!items.some(h => num(r[h]) !== null)) return parts.length ? `${parts.join("・")} ・ 朝の入力なし` : "朝の入力なし";
+    return parts.length ? parts.join("・") : "使ったものなし";
+  }
+
+  function drawTrendChart() {
+    const days = trendDays(14), m = METRICS[tr.metric], F = trendFactors();
+    if (!F.some(f => f.key === tr.factor)) tr.factor = "drink";
+    const fac = F.find(f => f.key === tr.factor);
+    const val = x => (x.r ? num(x.r[m.col]) : null);
+    if (tr.sel === null) { let i = days.length - 1; while (i > 0 && !days[i].r) i--; tr.sel = i; }
+    const ax = m.axis(days.map(val).filter(v => v !== null));
+    const W = 340, ml = 70, mr = 6, mt = 10, ph = 150;
+    const band = (W - ml - mr) / days.length, bw = band - 5;
+    const y0 = mt + ph + 30, rh = 20, H = y0 + F.length * rh + 4;
+    const y = v => mt + ph - (v / ax.max) * ph;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${m.label}の棒グラフ（直近14日）">`;
+    s += `<rect class="colsel" x="${ml + tr.sel * band}" y="${mt}" width="${band}" height="${H - mt - 2}" rx="4"/>`;
+    ax.ticks.forEach(t => {
+      s += `<line class="${t === 0 ? "base" : "grid"}" x1="${ml}" x2="${W - mr}" y1="${y(t)}" y2="${y(t)}"/>`;
+      s += `<text class="tick" x="${ml - 8}" y="${y(t) + 3.5}" text-anchor="end">${ax.tick(t)}</text>`;
+    });
+    days.forEach((x, i) => {
+      const v = val(x), f = fval(fac, x.r), bx = ml + i * band + 2.5;
+      if (v === null) {
+        s += `<text class="nil" x="${bx + bw / 2}" y="${mt + ph - 4}" text-anchor="middle">–</text>`;
+      } else {
+        const top = y(v), base = y(0), r = Math.min(4, base - top);
+        const cls = f === null ? "na" : f ? "yes" : "no";
+        s += `<path class="bar ${cls}${i === tr.sel ? " is-sel" : ""}" d="M${bx},${base}V${top + r}Q${bx},${top} ${bx + r},${top}H${bx + bw - r}Q${bx + bw},${top} ${bx + bw},${top + r}V${base}Z"/>`;
+      }
+      s += `<text class="xl" x="${bx + bw / 2}" y="${mt + ph + 17}" text-anchor="middle">${Number(x.d.slice(8))}</text>`;
+      s += `<rect class="hit" data-i="${i}" x="${ml + i * band}" y="${mt}" width="${band}" height="${ph + 22}"/>`;
+    });
+    F.forEach((f, k) => {
+      const top = y0 + k * rh, cy = top + rh / 2, on = f.key === tr.factor;
+      if (on) s += `<rect class="rowbg" x="1" y="${top + 1}" width="${W - 2}" height="${rh - 2}" rx="6"/>`;
+      const label = f.label.length > 5 ? f.label.slice(0, 5) + "…" : f.label;
+      s += `<text class="rowlabel${on ? " is-on" : ""}" x="${ml - 8}" y="${cy + 4}" text-anchor="end">${esc(label)}</text>`;
+      days.forEach((x, i) => {
+        const cx = ml + i * band + band / 2, v = fval(f, x.r);
+        if (v === 1) s += `<circle class="dot-yes${on ? " on" : ""}" cx="${cx}" cy="${cy}" r="4.5"/>`;
+        else if (v === 0) s += `<circle class="dot-no" cx="${cx}" cy="${cy}" r="1.6"/>`;
+      });
+      s += `<rect class="rowhit" data-f="${esc(f.key)}" x="0" y="${top}" width="${W}" height="${rh}" tabindex="0" role="button" aria-label="${esc(f.label)}のあり・なしで色分けする"/>`;
+    });
+    $("trend-chart").innerHTML = s + "</svg>";
+
+    const hasNA = days.some(x => val(x) !== null && fval(fac, x.r) === null);
+    $("trend-legend").innerHTML = `<span><i class="dot yes"></i>${esc(fac.label)}あり</span><span><i class="dot no"></i>なし</span>` +
+      (hasNA ? '<span><i class="dot na"></i>記録なし</span>' : "");
+    const cur = days[tr.sel], v = val(cur);
+    $("trend-readout").hidden = false;
+    $("trend-readout").textContent = `${md(cur.d)} ${m.label} ${v === null ? "記録なし" : m.fmt(v)} ・ ${usedText(cur.r)}`;
+    $("trend-note").textContent = "下の項目名をタップすると、棒の色分けが切り替わります。飲酒・瞑想は自動（禁酒アプリ・mindful-app）。瞑想は前日にしたか。" +
+      (tr.metric === "mood" ? " 日中の気分＝mindful-app で記録した気分の、その日の平均。" : "");
+  }
+
+  function drawCompare() {
+    const m = METRICS[tr.metric];
+    const rows = trendDays(28).filter(x => x.r).map(x => x.r);
+    $("compare-title").textContent = `くらべる（${m.label}の平均）`;
+    $("compare-body").innerHTML = trendFactors().map(f => {
+      const yes = [], no = [];
+      rows.forEach(r => { const v = num(r[m.col]), g = f.get(r); if (v === null || g === null) return; (g ? yes : no).push(v); });
+      const a = yes.length ? avg(yes) : null, b = no.length ? avg(no) : null;
+      const td = (v, n) => `<td>${v === null ? "—" : m.fmt(v)}<span class="n">${n}晩</span></td>`;
+      return `<tr><td>${esc(f.label)}</td>${td(a, yes.length)}${td(b, no.length)}<td class="diff">${a === null || b === null ? "—" : m.diff(a - b)}</td></tr>`;
+    }).join("");
+  }
+
+  function renderTrend() {
+    if (!data) return;
+    $("trend-eyebrow").textContent = `直近 14 日 ・ ${mdShort(addDays(data.today, -13))}〜${mdShort(data.today)}`;
+    document.querySelectorAll("#trend-sub button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sub === tr.sub)));
+    $("trend-metrics").innerHTML = Object.entries(METRICS).map(([k, m]) =>
+      `<button type="button" data-metric="${k}" aria-pressed="${k === tr.metric}">${m.label}</button>`).join("");
+    const isCompare = tr.sub === "compare";
+    $("trend-card").hidden = isCompare;
+    $("compare-card").hidden = !isCompare;
+    if (isCompare) drawCompare(); else drawTrendChart();
+  }
+  $("trend-sub").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { tr.sub = b.dataset.sub; renderTrend(); } });
+  $("trend-metrics").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { tr.metric = b.dataset.metric; renderTrend(); } });
+  const pickDay = e => { const h = e.target.closest(".hit"); if (h && Number(h.dataset.i) !== tr.sel) { tr.sel = Number(h.dataset.i); renderTrend(); } };
+  const pickFactor = (el, byKey) => {
+    if (!el || el.dataset.f === tr.factor) return;
+    tr.factor = el.dataset.f;
+    renderTrend();
+    if (byKey) document.querySelector(`#trend-chart .rowhit[data-f="${CSS.escape(tr.factor)}"]`)?.focus({ preventScroll: true });
+  };
+  $("trend-chart").addEventListener("click", e => { pickDay(e); pickFactor(e.target.closest(".rowhit"), false); });
+  $("trend-chart").addEventListener("pointerover", pickDay);
+  $("trend-chart").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickFactor(e.target.closest(".rowhit"), true); } });
+
+  // ---- 読み込み（前回の結果をすぐ表示 → 裏で最新を取りに行って差し替える） ----
+  const clock = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  function loadCache() {
+    try {
+      const c = JSON.parse(lsGet(LS_CACHE) || "null");
+      return c && c.data && Array.isArray(c.data.rows) && Array.isArray(c.data.header) ? c : null;
+    } catch (e) { return null; }
+  }
+  // GAS から届いた最新の中身を表示し、次回すぐ出せるようにこの端末に保存する
+  function setData(next) {
+    data = next;
+    fresh = true;
+    cachedAt = Date.now();
+    lsSet(LS_CACHE, JSON.stringify({ at: cachedAt, data }));
+    renderAll();
+  }
+  // 前回の結果のまま保存すると日付がずれることがあるので、最新を取得できてから保存する
+  function needFresh() {
+    if (!fresh) throw new Error("最新のデータを読み込み中です。少し待ってからもう一度押してください");
+  }
   function renderAll() {
     renderHome();
     renderWeek();
+    renderTrend();
     if (data.warnings && data.warnings.length) setStatus("⚠️ " + data.warnings.join(" ／ "));
     else setStatus("");
   }
   async function reload() {
-    setStatus("読み込み中…");
+    const hasOld = !!data && !fresh;
+    setStatus(hasOld ? `前回の表示（${clock(cachedAt)} 時点）・最新を取得中…` : "読み込み中…");
     try {
-      data = await api("load");
-      renderAll();
+      setData(await api("load"));
     } catch (e) {
-      setStatus(e.message, true);
+      setStatus(data ? `最新を取得できませんでした。前回の表示のままです（${e.message}）` : e.message, true);
     }
   }
   $("retry").addEventListener("click", reload);
 
   show("home");
-  if (lsGet(LS_URL)) reload();
-  else { show("settings"); setStatus("最初に、GAS のウェブアプリ URL を設定してください"); }
+  if (lsGet(LS_URL)) {
+    const cache = loadCache();
+    if (cache) { data = cache.data; cachedAt = cache.at; renderAll(); }
+    reload();
+  } else { show("settings"); setStatus("最初に、GAS のウェブアプリ URL を設定してください"); }
 </script>
 </body>
 </html>
